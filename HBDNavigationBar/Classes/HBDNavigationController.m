@@ -33,7 +33,7 @@ BOOL shouldShowFake(UIViewController *vc, UIViewController *from, UIViewControll
         return YES;
     }
 
-    if (from.hbd_barRealHidden != to.hbd_barRealHidden) {
+    if (from.hbd_isSetBarRealHidden && to.hbd_isSetBarRealHidden && from.hbd_barRealHidden != to.hbd_barRealHidden) {
         return YES;
     }
     
