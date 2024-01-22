@@ -23,6 +23,8 @@
 @property(nonatomic, assign) IBInspectable BOOL hbd_clickBackEnabled;
 @property(nonatomic, assign) IBInspectable BOOL hbd_splitNavigationBarTransition;
 
+@property(nonatomic, assign) IBInspectable BOOL hbd_barRealHidden; // 导航栏真实隐藏 默认NO
+
 // computed
 @property(nonatomic, assign, readonly) CGFloat hbd_computedBarShadowAlpha;
 @property(nonatomic, strong, readonly) UIColor *hbd_computedBarTintColor;
@@ -30,6 +32,7 @@
 
 // 这个属性是内部使用的
 @property(nonatomic, assign) BOOL hbd_extendedLayoutDidSet;
+@property(nonatomic, assign,readonly) BOOL hbd_isSetBarRealHidden; // 是否使用hbd_barRealHidden设置了导航栏。
 
 - (void)hbd_setNeedsUpdateNavigationBar;
 

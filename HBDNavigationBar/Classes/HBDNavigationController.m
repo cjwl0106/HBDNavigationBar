@@ -33,6 +33,10 @@ BOOL shouldShowFake(UIViewController *vc, UIViewController *from, UIViewControll
         return YES;
     }
 
+    if (from.hbd_barRealHidden != to.hbd_barRealHidden) {
+        return YES;
+    }
+    
     if (from.hbd_computedBarImage && to.hbd_computedBarImage && isImageEqual(from.hbd_computedBarImage, to.hbd_computedBarImage)) {
         // have the same image
         return from.hbd_barAlpha != to.hbd_barAlpha;
@@ -93,26 +97,6 @@ void adjustLayout(UIViewController *vc) {
     }
 }
 
-UIColor *blendColor(UIColor *from, UIColor *to, CGFloat percent) {
-    CGFloat fromRed = 0;
-    CGFloat fromGreen = 0;
-    CGFloat fromBlue = 0;
-    CGFloat fromAlpha = 0;
-    [from getRed:&fromRed green:&fromGreen blue:&fromBlue alpha:&fromAlpha];
-
-    CGFloat toRed = 0;
-    CGFloat toGreen = 0;
-    CGFloat toBlue = 0;
-    CGFloat toAlpha = 0;
-    [to getRed:&toRed green:&toGreen blue:&toBlue alpha:&toAlpha];
-
-    CGFloat newRed = fromRed + (toRed - fromRed) * fminf(1, (float) (percent * 4));
-    CGFloat newGreen = fromGreen + (toGreen - fromGreen) * fminf(1, (float) (percent * 4));
-    CGFloat newBlue = fromBlue + (toBlue - fromBlue) * fminf(1, (float) (percent * 4));
-    CGFloat newAlpha = fromAlpha + (toAlpha - fromAlpha) * fminf(1, (float) (percent * 4));
-    return [UIColor colorWithRed:newRed green:newGreen blue:newBlue alpha:newAlpha];
-}
-
 void printViewHierarchy(UIView *view, NSString *prefix) {
     NSString *viewName = [[[view classForCoder] description] stringByReplacingOccurrencesOfString:@"_" withString:@""];
     NSLog(@"%@%@ %@", prefix, viewName, NSStringFromCGRect(view.frame));
@@ -155,8 +139,6 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
 - (void)showFakeBarFrom:(UIViewController *)from to:(UIViewController *)to;
 
 - (void)clearFake;
-
-- (void)resetSubviewsInNavBar:(UINavigationBar *)navBar;
 
 - (UIGestureRecognizer *)superInteractivePopGestureRecognizer;
 
@@ -201,19 +183,14 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
             [target handleNavigationTransition:pan];
         }
     }
-
-    if (@available(iOS 11.0, *)); else return;
-    id <UIViewControllerTransitionCoordinator> coordinator = nav.transitionCoordinator;
-    if (coordinator) {
-        UIViewController *from = [coordinator viewControllerForKey:UITransitionContextFromViewControllerKey];
-        UIViewController *to = [coordinator viewControllerForKey:UITransitionContextToViewControllerKey];
-        if (pan.state == UIGestureRecognizerStateBegan || pan.state == UIGestureRecognizerStateChanged) {
-            nav.navigationBar.tintColor = blendColor(from.hbd_tintColor, to.hbd_tintColor, coordinator.percentComplete);
-        }
-    }
 }
 
 - (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
+    // 已经设置了hbd_barRealHidden属性 并且跟nav展示状态不同 重设nav展示状态
+    if (viewController.hbd_isSetBarRealHidden && self.nav.isNavigationBarHidden != viewController.hbd_barRealHidden) {
+        [self.nav setNavigationBarHidden:viewController.hbd_barRealHidden animated:animated];
+    }
+    
     if (self.navDelegate && [self.navDelegate respondsToSelector:@selector(navigationController:willShowViewController:animated:)]) {
         [self.navDelegate navigationController:navigationController willShowViewController:viewController animated:animated];
     }
@@ -240,6 +217,11 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
 }
 
 - (void)navigationController:(UINavigationController *)navigationController didShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
+    // 没有设置hbd_barRealHidden属性 页面展示后设置一下 保证每个页面都有自己的hbd_barRealHidden属性
+    if (!viewController.hbd_isSetBarRealHidden) {
+       viewController.hbd_barRealHidden = self.nav.isNavigationBarHidden;
+    }
+    
     if (self.navDelegate && [self.navDelegate respondsToSelector:@selector(navigationController:didShowViewController:animated:)]) {
         [self.navDelegate navigationController:navigationController didShowViewController:viewController animated:animated];
     }
@@ -437,6 +419,8 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
         scrollEdgeAppearance.backgroundColor = UIColor.clearColor;
         scrollEdgeAppearance.shadowColor = UIColor.clearColor;
         [scrollEdgeAppearance setBackIndicatorImage:[UINavigationBar appearance].backIndicatorImage transitionMaskImage:[UINavigationBar appearance].backIndicatorTransitionMaskImage];
+        scrollEdgeAppearance.buttonAppearance = [UINavigationBar appearance].standardAppearance.buttonAppearance;
+        scrollEdgeAppearance.doneButtonAppearance = [UINavigationBar appearance].standardAppearance.doneButtonAppearance;
         self.navigationBar.scrollEdgeAppearance = scrollEdgeAppearance;
         self.navigationBar.standardAppearance = [scrollEdgeAppearance copy];
     }
@@ -454,65 +438,22 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
     }
 }
 
-- (BOOL)navigationBar:(UINavigationBar *)navigationBar shouldPopItem:(UINavigationItem *)item {
-    if (self.viewControllers.count > 1 && self.topViewController.navigationItem == item) {
-        if (!(self.topViewController.hbd_backInteractive && self.topViewController.hbd_clickBackEnabled)) {
-            [self resetSubviewsInNavBar:self.navigationBar];
-            return NO;
-        }
-    }
-    return [super navigationBar:navigationBar shouldPopItem:item];
-}
-
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated {
     self.poppingViewController = self.topViewController;
     UIViewController *vc = [super popViewControllerAnimated:animated];
-    // vc != self.topViewController
-    [self fixClickBackIssue];
     return vc;
 }
 
 - (NSArray<UIViewController *> *)popToViewController:(UIViewController *)viewController animated:(BOOL)animated {
     self.poppingViewController = self.topViewController;
     NSArray *array = [super popToViewController:viewController animated:animated];
-    [self fixClickBackIssue];
     return array;
 }
 
 - (NSArray<UIViewController *> *)popToRootViewControllerAnimated:(BOOL)animated {
     self.poppingViewController = self.topViewController;
     NSArray *array = [super popToRootViewControllerAnimated:animated];
-    [self fixClickBackIssue];
     return array;
-}
-
-- (void)fixClickBackIssue {
-    if (@available(iOS 13.0, *)) {
-        return;
-    }
-    if (@available(iOS 11.0, *)) {
-        // fix：ios 11，12，当前后两个页面的 barStyle 不一样时，点击返回按钮返回，前一个页面的标题颜色响应迟缓或不响应
-        id <UIViewControllerTransitionCoordinator> coordinator = self.transitionCoordinator;
-        if (!(coordinator && coordinator.interactive)) {
-            self.navigationBar.barStyle = self.topViewController.hbd_barStyle;
-            self.navigationBar.titleTextAttributes = self.topViewController.hbd_titleTextAttributes;
-        }
-    }
-}
-
-- (void)resetSubviewsInNavBar:(UINavigationBar *)navBar {
-    if (@available(iOS 11, *)) {
-        // empty
-    } else {
-        // Workaround for >= iOS7.1. Thanks to @boliva - http://stackoverflow.com/posts/comments/34452906
-        [navBar.subviews enumerateObjectsUsingBlock:^(__kindof UIView *_Nonnull subview, NSUInteger idx, BOOL *_Nonnull stop) {
-            if (subview.alpha < 1.0) {
-                [UIView animateWithDuration:.25 animations:^{
-                    subview.alpha = 1.0;
-                }];
-            }
-        }];
-    }
 }
 
 - (void)updateNavigationBarForViewController:(UIViewController *)vc {
