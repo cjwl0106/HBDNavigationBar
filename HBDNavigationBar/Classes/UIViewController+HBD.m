@@ -135,7 +135,7 @@
 }
 
 - (BOOL)hbd_isSetBarRealHidden {
-    id obj = objc_getAssociatedObject(self, _cmd);
+    id obj = objc_getAssociatedObject(self, @selector(hbd_barRealHidden));
     return obj ? YES : NO;
 }
 

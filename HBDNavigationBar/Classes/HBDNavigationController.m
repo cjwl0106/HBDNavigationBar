@@ -186,9 +186,13 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
 }
 
 - (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
-    // 已经设置了hbd_barRealHidden属性 并且跟nav展示状态不同 重设nav展示状态
-    if (viewController.hbd_isSetBarRealHidden && self.nav.isNavigationBarHidden != viewController.hbd_barRealHidden) {
-        [self.nav setNavigationBarHidden:viewController.hbd_barRealHidden animated:animated];
+    if (viewController.hbd_isSetBarRealHidden) { // 已经设置了hbd_barRealHidden属性
+        // 如果当前nav展示状态跟将要展示的viewController设置不同 重新设置下
+        if (self.nav.isNavigationBarHidden != viewController.hbd_barRealHidden) {
+            [self.nav setNavigationBarHidden:viewController.hbd_barRealHidden animated:animated];
+        }
+    } else { // 没有设置过hbd_barRealHidden属性的默认不隐藏导航栏。
+        [self.nav setNavigationBarHidden:NO animated:animated];
     }
     
     if (self.navDelegate && [self.navDelegate respondsToSelector:@selector(navigationController:willShowViewController:animated:)]) {
@@ -217,11 +221,6 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
 }
 
 - (void)navigationController:(UINavigationController *)navigationController didShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
-    // 没有设置hbd_barRealHidden属性 页面展示后设置一下 保证每个页面都有自己的hbd_barRealHidden属性
-    if (!viewController.hbd_isSetBarRealHidden) {
-       viewController.hbd_barRealHidden = self.nav.isNavigationBarHidden;
-    }
-    
     if (self.navDelegate && [self.navDelegate respondsToSelector:@selector(navigationController:didShowViewController:animated:)]) {
         [self.navDelegate navigationController:navigationController didShowViewController:viewController animated:animated];
     }
@@ -442,6 +441,16 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
     if (!coordinator) {
         [self updateNavigationBarForViewController:self.topViewController];
     }
+}
+
+// 调用系统的setNavigationBarHidden相关方法，只要不是在pop阶段都要同步下最顶层topViewController的hbd_barRealHidden属性。
+// 展示的VC分为三个阶段 1、正在展示(push)阶段 2、展示中阶段 3、正在隐藏(pop)阶段
+// - (void)setNavigationBarHidden:(BOOL)navigationBarHidden方法最终也会调用下面的方法，所以不用单独处理。
+- (void)setNavigationBarHidden:(BOOL)hidden animated:(BOOL)animated {
+    if (!self.poppingViewController) { // 不是在3过程中 topViewController是新的页面 这时如果调用隐藏导航栏方法，设置下hbd_barRealHidden。
+        self.topViewController.hbd_barRealHidden = hidden;
+    }
+    [super setNavigationBarHidden:hidden animated:animated];
 }
 
 - (UIViewController *)popViewControllerAnimated:(BOOL)animated {
