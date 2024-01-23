@@ -419,8 +419,14 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
         scrollEdgeAppearance.backgroundColor = UIColor.clearColor;
         scrollEdgeAppearance.shadowColor = UIColor.clearColor;
         [scrollEdgeAppearance setBackIndicatorImage:[UINavigationBar appearance].backIndicatorImage transitionMaskImage:[UINavigationBar appearance].backIndicatorTransitionMaskImage];
-        scrollEdgeAppearance.buttonAppearance = [UINavigationBar appearance].standardAppearance.buttonAppearance;
-        scrollEdgeAppearance.doneButtonAppearance = [UINavigationBar appearance].standardAppearance.doneButtonAppearance;
+        UIBarButtonItemAppearance *buttonAppearance = [UINavigationBar appearance].standardAppearance.buttonAppearance;
+        if (buttonAppearance) {
+            scrollEdgeAppearance.buttonAppearance = buttonAppearance;
+        }
+        UIBarButtonItemAppearance *doneButtonAppearance = [UINavigationBar appearance].standardAppearance.doneButtonAppearance;
+        if (doneButtonAppearance) {
+            scrollEdgeAppearance.doneButtonAppearance = doneButtonAppearance;
+        }
         self.navigationBar.scrollEdgeAppearance = scrollEdgeAppearance;
         self.navigationBar.standardAppearance = [scrollEdgeAppearance copy];
     }
