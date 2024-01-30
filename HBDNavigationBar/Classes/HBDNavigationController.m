@@ -33,7 +33,7 @@ BOOL shouldShowFake(UIViewController *vc, UIViewController *from, UIViewControll
         return YES;
     }
 
-    if (from.hbd_isSetBarRealHidden && to.hbd_isSetBarRealHidden && from.hbd_barRealHidden != to.hbd_barRealHidden) {
+    if (from.hbd_isBarRealHiddenHasAssociatedObject && to.hbd_isBarRealHiddenHasAssociatedObject && from.hbd_barRealHidden != to.hbd_barRealHidden) {
         return YES;
     }
     
@@ -186,7 +186,7 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
 }
 
 - (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
-    if (viewController.hbd_isSetBarRealHidden) { // 已经设置了hbd_barRealHidden属性
+    if (viewController.hbd_isBarRealHiddenHasAssociatedObject) { // 已经设置了hbd_barRealHidden属性
         // 如果当前nav展示状态跟将要展示的viewController设置不同 重新设置下
         if (self.nav.isNavigationBarHidden != viewController.hbd_barRealHidden) {
             [self.nav setNavigationBarHidden:viewController.hbd_barRealHidden animated:animated];

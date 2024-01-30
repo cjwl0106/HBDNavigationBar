@@ -32,7 +32,7 @@
 
 // 这个属性是内部使用的
 @property(nonatomic, assign) BOOL hbd_extendedLayoutDidSet;
-@property(nonatomic, assign,readonly) BOOL hbd_isSetBarRealHidden; // 是否使用hbd_barRealHidden设置了导航栏。
+@property(nonatomic, assign, readonly) BOOL hbd_isBarRealHiddenHasAssociatedObject; // 是否使用hbd_barRealHidden设置了导航栏真实隐藏（hbd_barRealHidden是否有关联对象）
 
 - (void)hbd_setNeedsUpdateNavigationBar;
 

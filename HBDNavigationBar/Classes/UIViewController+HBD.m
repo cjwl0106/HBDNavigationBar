@@ -134,7 +134,7 @@
     objc_setAssociatedObject(self, @selector(hbd_barRealHidden), @(hidden), OBJC_ASSOCIATION_COPY_NONATOMIC);
 }
 
-- (BOOL)hbd_isSetBarRealHidden {
+- (BOOL)hbd_isBarRealHiddenHasAssociatedObject {
     id obj = objc_getAssociatedObject(self, @selector(hbd_barRealHidden));
     return obj ? YES : NO;
 }
