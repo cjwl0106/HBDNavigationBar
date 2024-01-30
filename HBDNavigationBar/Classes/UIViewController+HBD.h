@@ -23,7 +23,10 @@
 @property(nonatomic, assign) IBInspectable BOOL hbd_clickBackEnabled;
 @property(nonatomic, assign) IBInspectable BOOL hbd_splitNavigationBarTransition;
 
-@property(nonatomic, assign) IBInspectable BOOL hbd_barRealHidden; // 导航栏真实隐藏 默认NO
+// 期望导航栏真实隐藏 默认NO 需要在viewWillAppear中或之前设置改属性
+// 设置后不会立马隐藏，会在当前页面push的代理navigationController:willShowViewController:animated:中改变，
+// navigationController:willShowViewController:animated:在当前vc的viewWillAppear之后调用
+@property(nonatomic, assign) IBInspectable BOOL hbd_prefersBarRealHidden;
 
 // computed
 @property(nonatomic, assign, readonly) CGFloat hbd_computedBarShadowAlpha;

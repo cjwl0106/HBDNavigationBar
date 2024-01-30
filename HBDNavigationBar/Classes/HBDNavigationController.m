@@ -33,7 +33,7 @@ BOOL shouldShowFake(UIViewController *vc, UIViewController *from, UIViewControll
         return YES;
     }
 
-    if (from.hbd_isBarRealHiddenHasAssociatedObject && to.hbd_isBarRealHiddenHasAssociatedObject && from.hbd_barRealHidden != to.hbd_barRealHidden) {
+    if (from.hbd_isBarRealHiddenHasAssociatedObject && to.hbd_isBarRealHiddenHasAssociatedObject && from.hbd_prefersBarRealHidden != to.hbd_prefersBarRealHidden) {
         return YES;
     }
     
@@ -185,11 +185,12 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
     }
 }
 
+// push pop时都会调用该方法展示新的页面；该方法在vc的viewWillAppear之后调用
 - (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
     if (viewController.hbd_isBarRealHiddenHasAssociatedObject) { // 已经设置了hbd_barRealHidden属性
         // 如果当前nav展示状态跟将要展示的viewController设置不同 重新设置下
-        if (self.nav.isNavigationBarHidden != viewController.hbd_barRealHidden) {
-            [self.nav setNavigationBarHidden:viewController.hbd_barRealHidden animated:animated];
+        if (self.nav.isNavigationBarHidden != viewController.hbd_prefersBarRealHidden) {
+            [self.nav setNavigationBarHidden:viewController.hbd_prefersBarRealHidden animated:animated];
         }
     } else { // 没有设置过hbd_barRealHidden属性的默认不隐藏导航栏。
         [self.nav setNavigationBarHidden:NO animated:animated];
@@ -448,7 +449,7 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
 // - (void)setNavigationBarHidden:(BOOL)navigationBarHidden方法最终也会调用下面的方法，所以不用单独处理。
 - (void)setNavigationBarHidden:(BOOL)hidden animated:(BOOL)animated {
     if (!self.poppingViewController) { // 不是在3过程中 topViewController是新的页面 这时如果调用隐藏导航栏方法，设置下hbd_barRealHidden。
-        self.topViewController.hbd_barRealHidden = hidden;
+        self.topViewController.hbd_prefersBarRealHidden = hidden;
     }
     [super setNavigationBarHidden:hidden animated:animated];
 }
