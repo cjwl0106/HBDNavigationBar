@@ -520,6 +520,10 @@ void printViewHierarchy(UIView *view, NSString *prefix) {
     self.navigationBar.fakeView.alpha = 0;
     self.navigationBar.shadowImageView.alpha = 0;
     self.navigationBar.backgroundImageView.alpha = 0;
+    
+    [self.navigationBar setNeedsLayout];
+    [self.navigationBar layoutIfNeeded];
+    
     [self showFakeBarFrom:from];
     [self showFakeBarTo:to];
     [UIView setAnimationsEnabled:YES];
